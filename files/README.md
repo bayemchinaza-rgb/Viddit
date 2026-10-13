@@ -1,4 +1,4 @@
-# Chakam
+# Viddit
 A browser-based computer vision platform for object detection, motion detection, and object tracking
 
 ## What works now
