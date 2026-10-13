@@ -1,0 +1,2 @@
+# Viddit
+Object recognition technology
