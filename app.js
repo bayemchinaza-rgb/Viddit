@@ -479,45 +479,36 @@ function postprocess(results, outputNames, meta) {
 
 let inferenceQueue = Promise.resolve();
 
-function predictWithModel(source) {
-  const task = inferenceQueue.then(async () => {
-    const {
-      session,
-      inputName,
-      outputNames
-    } = await getModel();
+async function predictWithModel(source) {
+  const {
+    session,
+    inputName,
+    outputNames
+  } = await getModel();
 
-    const startedAt = performance.now();
-    const meta = preprocess(source);
+  const startedAt = performance.now();
+  const meta = preprocess(source);
 
-    const tensor = new ort.Tensor(
-      'float32',
-      inputBuffer,
-      [1, 3, INPUT_SIZE, INPUT_SIZE]
-    );
-
-    const results = await session.run({
-      [inputName]: tensor
-    });
-
-    const detections = postprocess(
-      results,
-      outputNames,
-      meta
-    );
-
-    return {
-      detections,
-      ms: performance.now() - startedAt
-    };
-  });
-
-  inferenceQueue = task.then(
-    () => undefined,
-    () => undefined
+  const tensor = new ort.Tensor(
+    'float32',
+    inputBuffer,
+    [1, 3, INPUT_SIZE, INPUT_SIZE]
   );
 
-  return task;
+  const results = await session.run({
+    [inputName]: tensor
+  });
+
+  const detections = postprocess(
+    results,
+    outputNames,
+    meta
+  );
+
+  return {
+    detections,
+    ms: performance.now() - startedAt
+  };
 }
 
 /* ---------------------------------------------------------------
