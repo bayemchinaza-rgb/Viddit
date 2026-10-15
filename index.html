@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Viddit — browser-based computer vision for image, video, and live camera object detection.">
+  <meta name="description" content="Viddit — browser-based computer vision for image, video, and live camera instance segmentation.">
   <meta name="theme-color" content="#080d16">
 
   <title>Viddit | Computer Vision Lab</title>
   <link rel="stylesheet" href="./style.css">
 
-  <!-- ONNX Runtime Web: runs yolo26n.onnx in the browser (pinned to one exact version) -->
+  <!-- ONNX Runtime Web -->
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/ort.wasm.min.js"></script>
 </head>
 
@@ -30,7 +30,7 @@
     </section>
 
     <div class="app-layout">
-      <aside class="sidebar" aria-label="Detection tools">
+      <aside class="sidebar" aria-label="Segmentation tools">
         <p class="sidebar-label">TOOLS</p>
 
         <nav class="workspace-nav" aria-label="Workspaces">
@@ -38,10 +38,10 @@
             class="nav-button active"
             type="button"
             data-workspace-button="image"
-            aria-label="Image detection"
+            aria-label="Image segmentation"
             aria-controls="imagePanel"
             aria-pressed="true"
-            title="Image detection"
+            title="Image segmentation"
           >
             <svg class="nav-svg" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="1.8"
@@ -58,10 +58,10 @@
             class="nav-button"
             type="button"
             data-workspace-button="video"
-            aria-label="Video detection"
+            aria-label="Video segmentation"
             aria-controls="videoPanel"
             aria-pressed="false"
-            title="Video detection"
+            title="Video segmentation"
           >
             <svg class="nav-svg" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="1.8"
@@ -77,10 +77,10 @@
             class="nav-button"
             type="button"
             data-workspace-button="camera"
-            aria-label="Live camera detection"
+            aria-label="Live camera segmentation"
             aria-controls="cameraPanel"
             aria-pressed="false"
-            title="Live camera detection"
+            title="Live camera segmentation"
           >
             <svg class="nav-svg" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="1.8"
@@ -100,7 +100,7 @@
 
       <div class="workspace-content">
 
-        <!-- IMAGE DETECTION -->
+        <!-- IMAGE SEGMENTATION -->
         <section
           class="workspace workspace-panel"
           id="imagePanel"
@@ -109,7 +109,7 @@
           <div class="workspace-header">
             <div>
               <p class="eyebrow">WORKSPACE / 01</p>
-              <h2>Image detection</h2>
+              <h2>Image segmentation</h2>
             </div>
             <span class="tag">IMAGE</span>
           </div>
@@ -117,9 +117,9 @@
           <div class="upload-area" id="uploadArea">
             <div class="upload-icon" aria-hidden="true">↑</div>
             <h3>Image input</h3>
-            <p>Choose an image or take a picture to detect objects.</p>
+            <p>Choose an image or take a picture to segment objects.</p>
 
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
               <label for="imageInput" class="upload-button">
                 Choose image
               </label>
@@ -129,13 +129,7 @@
               </label>
             </div>
 
-            <input
-              type="file"
-              id="imageInput"
-              accept="image/*"
-              hidden
-            >
-
+            <input type="file" id="imageInput" accept="image/*" hidden>
             <input
               type="file"
               id="captureImageInput"
@@ -157,7 +151,7 @@
 
             <canvas
               id="resultCanvas"
-              aria-label="Image with detected objects"
+              aria-label="Image with segmented objects"
               hidden
             ></canvas>
 
@@ -174,7 +168,7 @@
                 class="primary-button"
                 type="button"
                 disabled
-              >Detect objects</button>
+              >Segment objects</button>
 
               <button
                 id="resetButton"
@@ -186,7 +180,7 @@
           </section>
         </section>
 
-        <!-- VIDEO DETECTION -->
+        <!-- VIDEO SEGMENTATION -->
         <section
           class="workspace workspace-panel"
           id="videoPanel"
@@ -196,7 +190,7 @@
           <div class="workspace-header">
             <div>
               <p class="eyebrow">WORKSPACE / 02</p>
-              <h2>Video detection</h2>
+              <h2>Video segmentation</h2>
             </div>
             <span class="tag">VIDEO</span>
           </div>
@@ -204,7 +198,7 @@
           <div class="upload-area" id="videoUploadArea">
             <div class="upload-icon" aria-hidden="true">▷</div>
             <h3>Video input</h3>
-            <p>Select a video for object detection.</p>
+            <p>Select a video for object segmentation.</p>
 
             <label for="videoInput" class="upload-button">
               Choose video
@@ -241,7 +235,7 @@
 
               <canvas
                 id="videoResultCanvas"
-                aria-label="Video with live object detection boxes"
+                aria-label="Video with live object segmentation masks"
                 hidden
                 style="position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;margin:0;pointer-events:none;background:transparent;border-radius:0;"
               ></canvas>
@@ -260,14 +254,14 @@
                 class="primary-button"
                 type="button"
                 disabled
-              >Start detection</button>
+              >Start segmentation</button>
 
               <button
                 id="videoStopButton"
                 class="secondary-button"
                 type="button"
                 disabled
-              >Stop detection</button>
+              >Stop segmentation</button>
 
               <button
                 id="videoResetButton"
@@ -297,13 +291,13 @@
           <div class="upload-area" id="cameraStartPanel">
             <div class="upload-icon" aria-hidden="true">◎</div>
             <h3>Camera input</h3>
-            <p>Start the camera to detect objects live.</p>
+            <p>Start the camera to segment objects live.</p>
 
             <button
               id="cameraStartButton"
               class="primary-button"
               type="button"
-            >Start live detection</button>
+            >Start live segmentation</button>
 
             <p
               id="cameraPermissionStatus"
@@ -316,7 +310,7 @@
           </div>
 
           <section id="cameraWorkspace" class="preview-container" hidden>
-            <p class="eyebrow">LIVE DETECTION</p>
+            <p class="eyebrow">LIVE SEGMENTATION</p>
 
             <div
               id="cameraStage"
@@ -334,7 +328,7 @@
 
               <canvas
                 id="cameraResultCanvas"
-                aria-label="Live camera with object detection boxes"
+                aria-label="Live camera with object segmentation masks"
                 hidden
                 style="position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;margin:0;pointer-events:none;background:transparent;border-radius:0;"
               ></canvas>
@@ -373,28 +367,21 @@
   <!-- WORKSPACE NAVIGATION -->
   <script>
     (() => {
-      const buttons = document.querySelectorAll(
-        "[data-workspace-button]"
-      );
-      const panels = document.querySelectorAll(
-        "[data-workspace-panel]"
-      );
+      const buttons = document.querySelectorAll("[data-workspace-button]");
+      const panels = document.querySelectorAll("[data-workspace-panel]");
 
-      buttons.forEach((button) => {
+      buttons.forEach(button => {
         button.addEventListener("click", () => {
           const target = button.dataset.workspaceButton;
 
-          buttons.forEach((item) => {
-            const active =
-              item.dataset.workspaceButton === target;
-
+          buttons.forEach(item => {
+            const active = item.dataset.workspaceButton === target;
             item.classList.toggle("active", active);
             item.setAttribute("aria-pressed", String(active));
           });
 
-          panels.forEach((panel) => {
-            panel.hidden =
-              panel.dataset.workspacePanel !== target;
+          panels.forEach(panel => {
+            panel.hidden = panel.dataset.workspacePanel !== target;
           });
 
           document.dispatchEvent(
