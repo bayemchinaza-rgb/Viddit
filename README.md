@@ -1,27 +1,637 @@
-# Viddit
-A browser-based computer vision platform for object detection, motion detection, and object tracking
+:root {
+  --bg: #080d16;
+  --surface: #101827;
+  --surface-light: #172235;
+  --surface-hover: #1b2a3e;
+  --border: #26364b;
+  --text: #f1f5f9;
+  --muted: #91a0b5;
+  --accent: #40e0d0;
+  --accent-dark: #102e33;
+  --accent-soft: rgba(64, 224, 208, 0.14);
+  --pose: #66f1ff;
+  --radius: 12px;
+}
 
-## What works now
-- **Image**: choose a photo or take one, then detect objects.
-- **Video**: choose a video file and detect objects frame by frame (playback slows to match the model's speed).
-- **Live camera**: real-time detection with a frames-per-second readout. "Take picture" saves the current frame with its boxes.
+* {
+  box-sizing: border-box;
+}
 
-Everything runs in the browser with the YOLO26n model (80 everyday object classes, such as person, car, dog, cup, laptop, phone). No pictures are uploaded anywhere.
+[hidden] {
+  display: none !important;
+}
 
-## Files
-`index.html`, `style.css`, `app.js`, `yolo26n.onnx` (all in the same folder, repo root).
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+}
 
-## Running it
-Open it through GitHub Pages or a local server. Double-clicking `index.html` will not work, because browsers block the model file and the camera on `file://` pages.
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 45% 0%, #142538 0%, transparent 48%),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.55;
+}
 
-Local server: `python -m http.server 8000`, then open `http://localhost:8000`.
+button,
+input {
+  font: inherit;
+}
 
-## Settings
-Top of `app.js`: `CONFIDENCE_THRESHOLD` (default 0.35). Raise it for fewer, surer boxes; lower it to see more.
+button,
+.upload-button {
+  -webkit-tap-highlight-color: transparent;
+}
 
-## Notes
-- The model runs on the CPU through ONNX Runtime Web (single thread), so speed depends on the device.
-- Videos must be in a format the browser can play (MP4 H.264 or WebM).
+button:focus-visible,
+a:focus-visible,
+.upload-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
 
-## Next
-Confidence slider, motion detection, object tracking.
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+.topbar {
+  width: min(1440px, calc(100% - 40px));
+  min-height: 70px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-decoration: none;
+}
+
+.brand span {
+  color: var(--accent);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.status-dot,
+.sidebar-status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px #40e0d055;
+}
+
+.container {
+  width: min(1440px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.intro {
+  padding: 38px 0 30px;
+  text-align: left;
+}
+
+.eyebrow {
+  margin: 0 0 9px;
+  color: var(--accent);
+  font-size: 0.67rem;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+}
+
+h1,
+h2,
+h3,
+p {
+  overflow-wrap: anywhere;
+}
+
+.intro h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 850;
+  letter-spacing: -0.06em;
+  line-height: 1.1;
+}
+
+.subtitle {
+  max-width: 580px;
+  margin: 13px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+  padding-bottom: 24px;
+}
+
+.sidebar {
+  position: sticky;
+  top: 16px;
+  min-width: 0;
+  padding: 12px 6px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #0d1522;
+}
+
+.sidebar-label {
+  margin: 0 0 12px;
+  color: #77889e;
+  font-size: 0.57rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.workspace-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+
+.nav-button {
+  display: flex;
+  width: 78px;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 3px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.nav-button:hover {
+  border-color: #3b596c;
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.nav-button.active {
+  border-color: var(--accent);
+  background: var(--accent-dark);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px #40e0d015;
+}
+
+.nav-svg {
+  display: block;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+}
+
+.nav-label {
+  color: inherit;
+  font-size: 0.59rem;
+  font-weight: 850;
+  letter-spacing: 0.075em;
+  line-height: 1.1;
+}
+
+.sidebar-bottom {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-status-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.workspace-content {
+  min-width: 0;
+}
+
+.workspace {
+  min-width: 0;
+  padding: clamp(17px, 3vw, 30px);
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: #101827ee;
+  box-shadow: 0 20px 65px #00000020;
+}
+
+.workspace-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 23px;
+}
+
+.workspace-header .eyebrow {
+  margin-bottom: 5px;
+}
+
+.workspace-header h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.25;
+}
+
+.tag {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.camera-mode-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.mode-button {
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-light);
+  color: var(--muted);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.mode-button.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(64, 224, 208, 0.35);
+}
+
+.upload-area {
+  padding: 36px 18px;
+  border: 1px dashed #3a5068;
+  border-radius: var(--radius);
+  background: #0b1320;
+  text-align: center;
+}
+
+.upload-icon {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 14px;
+  place-items: center;
+  border: 1px solid #28504f;
+  border-radius: 12px;
+  background: var(--accent-dark);
+  color: var(--accent);
+  font-size: 1.8rem;
+}
+
+.upload-area h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.upload-area p {
+  margin: 8px 0 18px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.upload-area .file-note {
+  margin: 16px 0 0;
+  font-size: 0.75rem;
+}
+
+.upload-button,
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 15px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.83rem;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.upload-button,
+.primary-button {
+  background: var(--accent);
+  color: #071412;
+}
+
+.upload-button:hover,
+.primary-button:hover {
+  background: #68ebe0;
+}
+
+.secondary-button {
+  border-color: var(--border);
+  background: var(--surface-light);
+  color: var(--text);
+}
+
+.secondary-button:hover {
+  border-color: #405872;
+  background: var(--surface-hover);
+}
+
+.preview-container {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #0b1320;
+}
+
+.preview-heading {
+  margin-bottom: 12px;
+}
+
+.preview-heading .eyebrow {
+  margin-bottom: 4px;
+}
+
+.file-name {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.83rem;
+}
+
+#imagePreview,
+#resultCanvas,
+#videoResultCanvas,
+#cameraResultCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: 9px;
+  background: #070b12;
+}
+
+#imagePreview {
+  max-height: 600px;
+  object-fit: contain;
+}
+
+#videoPreview {
+  display: block;
+  width: 100%;
+  max-height: 480px;
+  border-radius: 9px;
+  background: #070b12;
+}
+
+#cameraPreview {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: 9px;
+  background: #070b12;
+}
+
+.detection-status {
+  min-height: 24px;
+  margin: 13px 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.file-note {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+footer {
+  padding: 24px 0 28px;
+  color: #64748b;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .nav-button {
+    width: 72px;
+  }
+
+  .nav-svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .workspace {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  .topbar,
+  .container {
+    width: calc(100% - 28px);
+  }
+
+  .topbar {
+    min-height: 62px;
+  }
+
+  .brand {
+    font-size: 1.1rem;
+  }
+
+  .status {
+    gap: 6px;
+    font-size: 0.6rem;
+  }
+
+  .intro {
+    padding: 30px 0 23px;
+  }
+
+  .intro h1 {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  .subtitle {
+    margin-top: 10px;
+    font-size: 0.84rem;
+  }
+
+  .app-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .sidebar {
+    position: static;
+    padding: 9px;
+    border-radius: 12px;
+  }
+
+  .sidebar-label {
+    margin-bottom: 9px;
+    text-align: left;
+  }
+
+  .workspace-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-items: center;
+    gap: 8px;
+  }
+
+  .nav-button {
+    width: min(100%, 82px);
+    max-width: 82px;
+    aspect-ratio: 1 / 1;
+    gap: 7px;
+    padding: 7px 2px;
+    border-radius: 9px;
+  }
+
+  .nav-svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .nav-label {
+    font-size: 0.57rem;
+  }
+
+  .sidebar-bottom {
+    display: none;
+  }
+
+  .workspace {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .workspace-header {
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .workspace-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .tag {
+    padding: 4px 6px;
+    font-size: 0.57rem;
+  }
+
+  .camera-mode-toggle {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-area {
+    padding: 28px 11px;
+  }
+
+  .upload-area h3 {
+    font-size: 0.98rem;
+  }
+
+  .upload-area p {
+    font-size: 0.8rem;
+  }
+
+  .preview-container {
+    padding: 10px;
+  }
+
+  .action-row > button {
+    flex: 1 1 100%;
+  }
+
+  footer {
+    padding: 20px 0 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
